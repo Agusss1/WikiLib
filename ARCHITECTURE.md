@@ -470,11 +470,19 @@ Las que más impacto tienen y sobre las que hace falta una definición:
 ## 16. Estado técnico
 
 ```
-npm run dev             # desarrollo
-npm run build           # valida el contenido y luego compila
-npm run content:check   # sólo el validador
+npm run dev             # desarrollo -> http://localhost:3000
+npm run preview         # compila y sirve el sitio estático final
+npm run build           # valida contenido + asistente, y compila a out/
+npm run content:check   # sólo el validador editorial
+npm run check:assistant # verifica que el asistente no responda fuera de tema
 npm run typecheck       # tsc --noEmit
 ```
+
+**Publicación.** El sitio compila a HTML estático (`output: "export"`), sin necesidad
+de servidor Node en producción. Se puede alojar en GitHub Pages, Netlify, Vercel,
+Cloudflare Pages o un bucket cualquiera. El flujo de `.github/workflows/deploy.yml`
+publica en GitHub Pages en cada push, y **sólo si el contenido pasa el validador**:
+un artículo con una cita sin fuente no llega a producción.
 
 - Build: pasa. ~100 páginas estáticas.
 - Validador: sin errores; 2 advertencias intencionales (un dato marcado como pendiente

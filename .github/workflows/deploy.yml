@@ -1,0 +1,60 @@
+name: Publicar en GitHub Pages
+
+# Publica el sitio estático cada vez que se actualiza la rama principal.
+# Requiere una única acción manual, y sólo la primera vez:
+#   Settings → Pages → Build and deployment → Source: "GitHub Actions"
+
+on:
+  push:
+    branches:
+      - main
+      - claude/wikilib-argentina-platform-kw9y1z
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Deja terminar el despliegue en curso antes de empezar otro.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # El build corre el validador de contenido y la verificación del
+      # asistente antes de compilar: si el contenido no cumple los
+      # estándares editoriales, no se publica.
+      - name: Construir sitio estático
+        env:
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+        run: npm run build
+
+      # Sin este archivo, GitHub Pages ignora el directorio _next.
+      - run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

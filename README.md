@@ -26,19 +26,32 @@ con sus fuentes.
 
 ---
 
-## Empezar
+## Probarlo
 
 ```bash
+git clone -b claude/wikilib-argentina-platform-kw9y1z https://github.com/Agusss1/WikiLib.git
+cd WikiLib
 npm install
-npm run dev          # http://localhost:3000
+npm run dev
 ```
+
+Abrir **http://localhost:3000**. Requiere Node 20 o superior.
 
 | Comando | Qué hace |
 |---|---|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Valida el contenido y compila |
+| `npm run dev` | Servidor de desarrollo, con recarga en caliente |
+| `npm run preview` | Compila y sirve el sitio estático final |
+| `npm run build` | Valida el contenido y compila a `out/` |
 | `npm run content:check` | Sólo el validador editorial |
+| `npm run check:assistant` | Verifica que el asistente no responda fuera de tema |
 | `npm run typecheck` | `tsc --noEmit` |
+
+### Publicarlo
+
+El sitio compila a HTML estático, así que se puede alojar en cualquier lado.
+Hay un flujo de GitHub Actions listo en `.github/workflows/deploy.yml`: para
+activarlo, en **Settings → Pages → Source** elegir **GitHub Actions**. Desde ahí
+cada push republica el sitio, y sólo lo hace si el contenido pasa el validador.
 
 ---
 
