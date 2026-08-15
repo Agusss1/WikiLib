@@ -112,7 +112,7 @@ export const fundamentos: Article[] = [
             "La respuesta liberal clásica no niega el problema sino que discute el instrumento: sostiene que la pobreza se reduce sobre todo por {{productividad}} y {{crecimiento}}, no por redistribución, y que las políticas que buscan garantizar resultados suelen destruir las condiciones que los hacían posibles.",
           ),
           p(
-            "Dónde queda el desacuerdo: en cuánta redistribución es compatible con mantener esas condiciones. Nadie tiene una respuesta cerrada. Ver [[que-hace-un-liberal-con-la-pobreza|el debate completo]].",
+            "Dónde queda el desacuerdo: en cuánta redistribución es compatible con mantener esas condiciones. Nadie tiene una respuesta cerrada. Ver [[por-que-hay-pobres-si-el-mercado-funciona|el debate completo]].",
           ),
         ],
         unresolved: true,
