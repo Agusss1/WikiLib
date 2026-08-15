@@ -5,11 +5,12 @@
   "description": "WikiLib — Wiki Liberal Argentina",
   "scripts": {
     "dev": "next dev",
-    "build": "npm run content:check && next build",
+    "build": "npm run content:check && npm run check:assistant && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "content:check": "tsx scripts/check-content.ts"
+    "content:check": "tsx scripts/check-content.ts",
+    "check:assistant": "tsx scripts/check-assistant.ts"
   },
   "dependencies": {
     "minisearch": "^7.1.2",

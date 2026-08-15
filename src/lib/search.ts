@@ -18,6 +18,94 @@ const STOP = new Set([
   "qué","que","cuando","donde","porque","por qué","porqué","sobre","entre","hasta","desde",
 ]);
 
+/**
+ * Palabras funcionales que NO cuentan para medir si una consulta trata
+ * realmente de un tema de la Wiki. Sin esta lista, una consulta como
+ * "cuál es la mejor receta de milanesas" coincidía por difuso con artículos
+ * que contienen "cuál" o "mejor", y el asistente respondía con seguridad
+ * sobre algo que la Wiki no cubre.
+ */
+const FUNCTION_WORDS = new Set([
+  "quien","quienes","cual","cuales","como","cuando","cuanto","cuanta","cuantos","cuantas",
+  "donde","adonde","mejor","peor","mucho","mucha","poco","poca","todo","toda","todos","todas",
+  "hacer","hace","hacen","tener","tiene","tienen","poder","puede","pueden","debe","deben",
+  "decir","dice","saber","sabe","entiendo","entender","explicar","significa","pasa","pasaria",
+  "quiero","quisiera","necesito","gustaria","favor","gracias","hola","dame","decime","contame",
+  "queda","quedan","esta","estan","estoy","sirve","sirven","llama","llaman","existe","existen",
+  "usar","usa","usan","dar","da","dan","ver","mira","busco","buscar","conocer","aprender",
+]);
+
+/** Términos de contenido de una consulta: los que de verdad indican el tema. */
+export function contentTerms(q: string): string[] {
+  return fold(q)
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 4 && !STOP.has(w) && !FUNCTION_WORDS.has(w));
+}
+
+function wordsOf(text: string): Set<string> {
+  return new Set(fold(text).split(/[^a-z0-9]+/).filter(Boolean));
+}
+
+function covered(words: Set<string>, terms: string[]): number {
+  if (terms.length === 0) return 1;
+  let n = 0;
+  for (const t of terms) {
+    // Coincidencia exacta, o el término como prefijo de una palabra del texto
+    // (para tolerar plurales y flexiones: "impuesto" cubre "impuestos").
+    if (words.has(t)) {
+      n += 1;
+      continue;
+    }
+    for (const w of words) {
+      if (w.length > t.length && w.startsWith(t) && w.length - t.length <= 3) {
+        n += 1;
+        break;
+      }
+    }
+  }
+  return n / terms.length;
+}
+
+/**
+ * Qué proporción de los términos de contenido de la consulta aparece en el
+ * documento. Es la señal que distingue "esto trata del tema" de "esto
+ * coincidió por ruido difuso".
+ */
+export function coverage(doc: SearchDoc, terms: string[]): number {
+  // Se compara contra palabras completas, no subcadenas: "gano" no debe dar
+  // por cubierto un documento sólo porque contiene "órgano".
+  return covered(wordsOf(`${doc.title} ${doc.subtitle} ${doc.body} ${doc.tags.join(" ")}`), terms);
+}
+
+/**
+ * Cobertura restringida a los campos que definen de qué trata un documento:
+ * título, resumen, etiquetas y categoría. Que un término aparezca en el
+ * cuerpo lo hace mencionado; que aparezca acá lo hace su tema.
+ */
+export function topicCoverage(doc: SearchDoc, terms: string[]): number {
+  return covered(
+    wordsOf(`${doc.title} ${doc.subtitle} ${doc.tags.join(" ")} ${doc.category ?? ""}`),
+    terms,
+  );
+}
+
+/**
+ * Criterio de pertinencia para el asistente: el documento trata del tema, o
+ * bien contiene casi todos los términos de contenido de la consulta.
+ * Sin este umbral, una pregunta ajena a la Wiki obtenía igual una respuesta
+ * segura, que es exactamente lo que los estándares editoriales prohíben.
+ */
+export function isRelevant(doc: SearchDoc, terms: string[]): boolean {
+  if (terms.length === 0) return true;
+  // Una consulta de una sola palabra pregunta por un tema, así que ese
+  // término tiene que estar en el título, el resumen o las etiquetas.
+  // Que aparezca de pasada en el cuerpo no alcanza: "asado" aparece como
+  // ejemplo dentro del artículo sobre el dinero, y eso no convierte a ese
+  // artículo en una respuesta sobre asados.
+  if (terms.length === 1) return topicCoverage(doc, terms) > 0;
+  return topicCoverage(doc, terms) > 0 || coverage(doc, terms) >= 0.75;
+}
+
 let engine: MiniSearch<SearchDoc> | null = null;
 
 export function getEngine(): MiniSearch<SearchDoc> {
@@ -76,13 +164,18 @@ export function search(q: string, limit = 30): Hit[] {
   const byId = new Map(SEARCH_DOCS.map((d) => [d.id, d]));
   const seen = new Set<string>();
   const hits: Hit[] = [];
+  const terms = contentTerms(query);
 
   for (const r of raw) {
     if (seen.has(r.id as string)) continue;
     seen.add(r.id as string);
     const doc = byId.get(r.id as string);
     if (!doc) continue;
-    hits.push({ ...doc, score: r.score * doc.boost });
+    const cov = coverage(doc, terms);
+    // Un documento que no contiene ningún término de contenido de la consulta
+    // coincidió por ruido difuso, no por tema.
+    if (terms.length > 0 && cov === 0) continue;
+    hits.push({ ...doc, score: r.score * doc.boost * (0.4 + cov) });
   }
 
   hits.sort((a, b) => b.score - a.score);

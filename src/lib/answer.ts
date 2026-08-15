@@ -3,7 +3,7 @@ import { FAQS } from "@/content/debates";
 import { GLOSSARY_BY_ID } from "@/content/glossary";
 import { getSource } from "@/content/sources";
 import type { Source } from "@/content/schema";
-import { search } from "./search";
+import { search, contentTerms, isRelevant } from "./search";
 import { stripInline } from "./inline";
 import type { Block } from "@/content/schema";
 
@@ -97,6 +97,15 @@ export function answerQuestion(question: string): Answer {
   }
 
   const hits = search(q, 12);
+
+  /**
+   * Umbral de pertinencia. El asistente prefiere decir "esto no está en la
+   * Wiki" antes que responder con seguridad sobre un tema que no cubre; ese
+   * es un requisito editorial, no una preferencia de producto.
+   */
+  const topical = contentTerms(q);
+  const relevant = hits.filter((h) => isRelevant(h, topical));
+
   const queryTerms = q
     .toLowerCase()
     .normalize("NFD")
@@ -105,11 +114,11 @@ export function answerQuestion(question: string): Answer {
     .filter((w) => w.length > 3);
 
   // 1. Coincidencia directa con una pregunta difícil.
-  const faqHit = hits.find((h) => h.kind === "pregunta");
+  const faqHit = relevant.find((h) => h.kind === "pregunta");
   const faq = faqHit ? FAQS.find((f) => `pregunta:${f.id}` === faqHit.id) : undefined;
 
   // 2. Artículos relevantes.
-  const articleHits = hits.filter((h) => h.kind === "articulo").slice(0, 4);
+  const articleHits = relevant.filter((h) => h.kind === "articulo").slice(0, 4);
   const articles = articleHits
     .map((h) => ARTICLES_BY_SLUG[h.id.replace("articulo:", "")])
     .filter(Boolean);
