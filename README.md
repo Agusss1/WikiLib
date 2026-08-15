@@ -48,10 +48,26 @@ Abrir **http://localhost:3000**. Requiere Node 20 o superior.
 
 ### Publicarlo
 
-El sitio compila a HTML estático, así que se puede alojar en cualquier lado.
-Hay un flujo de GitHub Actions listo en `.github/workflows/deploy.yml`: para
-activarlo, en **Settings → Pages → Source** elegir **GitHub Actions**. Desde ahí
-cada push republica el sitio, y sólo lo hace si el contenido pasa el validador.
+El sitio compila a HTML estático en `out/`. No necesita servidor Node en
+producción y se puede alojar en cualquier lado.
+
+**En un dominio propio** (Hostinger, Netlify, Cloudflare Pages, un bucket):
+
+```bash
+npm run build          # genera out/ — SIN variables de entorno
+```
+
+Subir **el contenido de `out/`** a la raíz del sitio (`public_html/` en Hostinger),
+incluido el `.htaccess`, que configura la página 404, la compresión y el cacheo.
+
+> **Importante:** no definir `NEXT_PUBLIC_BASE_PATH` al compilar para un dominio
+> raíz. Esa variable existe sólo para servir desde una subruta como
+> `usuario.github.io/WikiLib`, y si queda puesta, todos los CSS y JS apuntan a
+> una carpeta que no existe: el sitio carga sin estilos.
+
+**En GitHub Pages**, hay un flujo listo en `.github/workflows/deploy.yml`. Se
+ejecuta a pedido desde la pestaña Actions, y requiere haber elegido una vez
+**Settings → Pages → Source → GitHub Actions**.
 
 ---
 

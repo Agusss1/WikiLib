@@ -1,14 +1,11 @@
 name: Publicar en GitHub Pages
 
-# Publica el sitio estático cada vez que se actualiza la rama principal.
-# Requiere una única acción manual, y sólo la primera vez:
-#   Settings → Pages → Build and deployment → Source: "GitHub Actions"
+# Publicación en GitHub Pages, como alternativa o espejo del hosting propio.
+# Se ejecuta sólo a pedido (pestaña Actions -> Run workflow), porque el sitio
+# se publica en un dominio propio. Requiere haber puesto, una única vez:
+#   Settings -> Pages -> Build and deployment -> Source: "GitHub Actions"
 
 on:
-  push:
-    branches:
-      - main
-      - claude/wikilib-argentina-platform-kw9y1z
   workflow_dispatch:
 
 permissions:

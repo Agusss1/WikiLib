@@ -1,0 +1,37 @@
+# Configuración para hosting Apache/LiteSpeed (Hostinger y similares).
+# El sitio es HTML estático: cada ruta tiene su propio index.html, así que
+# no hace falta ninguna regla de reescritura tipo SPA.
+
+# Página de error propia. Sin esto, Apache muestra su 404 genérico en lugar
+# del de la Wiki.
+ErrorDocument 404 /404.html
+
+# Servir /ruta cuando el archivo real es /ruta/index.html
+DirectoryIndex index.html
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # Los archivos de _next llevan hash en el nombre: son inmutables.
+  <FilesMatch "\.(js|css|woff2)$">
+    ExpiresDefault "access plus 1 year"
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  # El HTML se revalida siempre, para que una publicación nueva se vea al toque.
+  <FilesMatch "\.html$">
+    ExpiresDefault "access plus 0 seconds"
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+  ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
