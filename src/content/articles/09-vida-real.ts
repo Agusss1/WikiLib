@@ -608,6 +608,40 @@ export const vidaReal: Article[] = [
       },
     ],
 
+    critiques: [
+      {
+        objection:
+          "«Dejala crecer y mirá qué pasa» funciona para una app de delivery, no para tecnologías con daños potencialmente irreversibles o a escala poblacional. La responsabilidad ex post no sirve si el daño no se puede reparar ni atribuir a nadie en particular.",
+        response: [
+          p(
+            "Es la objeción más fuerte y el marco liberal tradicional la enfrenta con dificultad, porque supone daños identificables, reversibles y atribuibles a un agente.",
+          ),
+          p(
+            "La respuesta que suele darse distingue por tipo de riesgo: donde el daño es acotado y reparable, la responsabilidad ex post es superior a la autorización previa, porque no requiere que el regulador anticipe lo que nadie puede anticipar. Donde el daño sería catastrófico e irreversible, incluso liberales aceptan alguna forma de precaución.",
+          ),
+          p(
+            "Lo que el liberalismo sigue exigiendo en ese segundo caso es que la restricción sea proporcional al riesgo estimado y que se contabilicen también los costos de no actuar, que existen aunque no tengan cara.",
+          ),
+        ],
+        unresolved: true,
+      },
+      {
+        objection:
+          "Los liberales denuncian la captura del regulador pero ignoran la captura del discurso: las grandes tecnológicas financian buena parte de la investigación y de los centros de estudios que después concluyen que no hay que regularlas.",
+        response: [
+          p(
+            "El señalamiento es empíricamente verificable y aplica a los think tanks de todas las orientaciones, incluidos varios liberales.",
+          ),
+          p(
+            "La respuesta consistente con el propio método es no responder con una descalificación simétrica sino con el criterio habitual: evaluar el argumento, no su financiamiento. Un argumento financiado por una parte interesada puede ser correcto, y uno desinteresado puede ser malo.",
+          ),
+          p(
+            "Dicho eso, el financiamiento es información legítima para calibrar cuánto escrutinio aplicar. Reconocerlo es más honesto que negarlo.",
+          ),
+        ],
+      },
+    ],
+
     keyIdeas: [
       "El reflejo liberal es dejar experimentar, porque nadie anticipa para qué sirve una tecnología nueva.",
       "Los efectos de red generan concentración sin que nadie haga nada indebido: ahí está el desacuerdo.",

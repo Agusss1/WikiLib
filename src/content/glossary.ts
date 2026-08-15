@@ -49,6 +49,8 @@ export const GLOSSARY: GlossaryTerm[] = [
   { id: "correspondencia-fiscal", term: "Correspondencia fiscal", definition: "Que quien decide un gasto sea quien asume el costo político de cobrar el impuesto que lo financia.", article: "instituciones" },
   { id: "costo-de-oportunidad", term: "Costo de oportunidad", definition: "El valor de la mejor alternativa que se descarta al tomar una decisión. El costo real de cualquier cosa.", article: "escasez-e-incentivos" },
   { id: "curva-de-laffer", term: "Curva de Laffer", definition: "Relación no lineal entre alícuota y recaudación: con 0% y con 100% no se recauda nada. Dónde está el máximo es una pregunta empírica.", article: "impuestos" },
+  { id: "crecimiento", term: "Crecimiento económico", definition: "Aumento sostenido de la producción por habitante. Es condición necesaria, aunque no suficiente, para reducir la pobreza de manera duradera.", article: "capitalismo" },
+  { id: "pluralismo", term: "Pluralismo", definition: "Reconocimiento de que existen múltiples formas válidas de vivir bien y que no hay una jerarquía única que las ordene.", article: "cultura-liberal" },
   { id: "curso-legal", term: "Curso legal", definition: "Condición de una moneda que la ley obliga a aceptar para cancelar deudas. Sostiene su uso, no su valor.", article: "dinero" },
   { id: "debido-proceso", term: "Debido proceso", definition: "Garantía de ser oído, defenderse y obtener una decisión fundada antes de ser sancionado. Artículo 18 de la Constitución.", article: "estado-de-derecho" },
   { id: "default", term: "Default", definition: "Cesación de pagos de una deuda. Argentina lo declaró sobre gran parte de su deuda soberana en diciembre de 2001.", article: "deuda-publica" },

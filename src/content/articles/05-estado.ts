@@ -206,7 +206,7 @@ export const estado: Article[] = [
       "Bien público tiene un sentido técnico preciso; salud y educación no lo son.",
       "Los liberales discrepan mucho sobre cuánto Estado, y coinciden en que necesita límites duros.",
     ],
-    related: ["libertad", "propiedad-privada", "estado-de-derecho", "impuestos", "democracia-y-liberalismo", "instituciones"],
+    related: ["libertad", "propiedad-privada", "estado-de-derecho", "impuestos", "democracia-y-liberalismo", "educacion-y-liberalismo"],
     glossary: ["estado", "bien-publico", "free-rider", "monopolio-de-la-fuerza", "federalismo", "subsidiariedad"],
     sources: ["locke-two-treatises", "cn-argentina", "nozick-anarquia", "rothbard-nueva-libertad", "friedman-capitalismo"],
     furtherReading: [

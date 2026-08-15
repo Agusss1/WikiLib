@@ -304,6 +304,40 @@ export const corrientes: Article[] = [
       ),
     ],
 
+    critiques: [
+      {
+        objection:
+          "Este mapa de corrientes es una taxonomía cómoda que sirve para que cada liberal se desmarque de lo que le incomoda. En la práctica política, las diferencias entre «liberal clásico» y «libertario» se disuelven: terminan votando lo mismo.",
+        response: [
+          p(
+            "La observación tiene una parte cierta: en una elección concreta las opciones son pocas y las corrientes convergen. Y es verdad que la etiqueta se usa a veces para eludir responsabilidad por resultados.",
+          ),
+          p(
+            "Pero las diferencias son verificables donde hay que decidir en serio. Un minarquista y un liberal clásico discrepan sobre si debe existir banco central, sobre si el Estado debe financiar educación y sobre la legitimidad misma del impuesto. Eso no es matiz: son políticas opuestas.",
+          ),
+          p(
+            "El test práctico: si dos personas coinciden en todo, la distinción es decorativa; si discrepan sobre dolarización, asistencia social o propiedad intelectual, no lo es. En Argentina discrepan en las tres.",
+          ),
+        ],
+        unresolved: true,
+      },
+      {
+        objection:
+          "Presentar el liberalismo como una familia plural es una estrategia retórica: permite atribuirle los éxitos a la tradición entera y los fracasos a una corriente particular.",
+        response: [
+          p(
+            "Es una crítica metodológica seria y se aplica también a otras tradiciones que se defienden del mismo modo.",
+          ),
+          p(
+            "La respuesta honesta es que la pluralidad tiene que sostenerse con costos, no sólo con beneficios: si se reconoce que el anarcocapitalismo es liberalismo, hay que hacerse cargo de sus dificultades; si se reconoce que el liberalismo social lo es, no se lo puede excomulgar cuando defiende gasto público.",
+          ),
+          p(
+            "Este sitio intenta hacer eso: cada corriente aparece con sus objeciones propias, no sólo con su mejor cara.",
+          ),
+        ],
+      },
+    ],
+
     openDebate: [
       ul(
         "**Propiedad intelectual:** Rothbard y varios austriacos la rechazan; otros liberales la defienden como propiedad legítima.",
@@ -623,6 +657,41 @@ export const corrientes: Article[] = [
       p(
         "Sobre la salida, sin embargo, los liberales discrepan: salida rápida versus gradual, con o sin ancla cambiaria previa, y en qué orden respecto del equilibrio fiscal. No hay una respuesta liberal única.",
       ),
+    ],
+
+    critiques: [
+      {
+        objection:
+          "Frente a una corrida cambiaria, levantar los controles significa perder todas las reservas en días y provocar una devaluación descontrolada. El costo social de eso es inmediato y recae sobre los que menos tienen. Un control transitorio es el mal menor.",
+        from: "Posición defendida incluso por economistas no heterodoxos ante situaciones de corrida",
+        response: [
+          p(
+            "El argumento es serio y varios liberales lo aceptan como excepción acotada. Distintos países aplicaron controles de capital temporales en crisis, en algunos casos con aval del propio FMI.",
+          ),
+          p(
+            "La objeción liberal no es al control de emergencia sino a lo que pasa después. El «tiempo ganado» rara vez se usa para corregir el desequilibrio fiscal que originó la falta de divisas: se usa para postergarlo, y cada mes adicional acumula distorsiones que encarecen la salida.",
+          ),
+          p(
+            "La pregunta útil, entonces, no es «cepo sí o no» sino «con qué plan de salida y en qué plazo». Un control sin fecha ni programa fiscal asociado no es una medida de emergencia: es la política.",
+          ),
+        ],
+        unresolved: true,
+      },
+      {
+        objection:
+          "Decir que el cepo «viola la propiedad» es exagerado: el Estado regula muchísimos mercados sin que eso se considere expropiación. Nadie tiene derecho a comprar reservas del Banco Central a un precio que fija el propio Estado.",
+        response: [
+          p(
+            "El punto es válido y conviene precisar la afirmación. El cepo no expropia: restringe el acceso a un mercado. Presentarlo como confiscación debilita el argumento.",
+          ),
+          p(
+            "La formulación defendible es más acotada: la restricción alcanza la facultad de disponer del propio patrimonio eligiendo en qué activo conservarlo, que es uno de los elementos del haz de derechos de propiedad. Cuánto de restricción admite el artículo 14 antes de chocar con el 28 es, como siempre, una cuestión de razonabilidad.",
+          ),
+          p(
+            "Es decir: es un argumento de grado y de proporcionalidad, no de violación categórica.",
+          ),
+        ],
+      },
     ],
 
     keyIdeas: [
