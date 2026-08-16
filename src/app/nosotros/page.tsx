@@ -75,7 +75,6 @@ export default function Nosotros() {
             </p>
             <ul className="space-y-2">
               {[
-                "No somos un partido ni hacemos campaña por ninguno.",
                 "No inventamos citas ni estadísticas. Nunca.",
                 "No presentamos opiniones como si fueran hechos.",
                 "No escondemos los desacuerdos internos del liberalismo.",

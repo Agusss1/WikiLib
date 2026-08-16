@@ -44,7 +44,7 @@ export default function Comunidad() {
               "Si afirmás un hecho, decí de dónde lo sacás. «Lo leí en algún lado» no es una fuente.",
               "Distinguí lo que sabés de lo que suponés. Admitir incertidumbre suma credibilidad, no la resta.",
               "Está permitido cambiar de opinión. Es, de hecho, el objetivo del ejercicio.",
-              "No se admite contenido que use la comunidad para hacer campaña partidaria. Este no es un espacio de un partido.",
+              "El foro es para discutir ideas, no para hacer campaña. Los llamados a votar o los actos de campaña van a otro lado.",
             ].map((r, i) => (
               <li
                 key={i}
