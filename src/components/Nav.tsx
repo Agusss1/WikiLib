@@ -63,6 +63,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/comunidad", label: "Comunidad", comunidad: true },
       { href: "/entrar", label: "Mi cuenta", comunidad: true },
+      { href: "/nosotros", label: "Nosotros" },
       { href: "/contribuir", label: "Contribuir" },
       { href: "/estandares", label: "Estándares editoriales" },
     ],

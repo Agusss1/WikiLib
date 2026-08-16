@@ -22,10 +22,12 @@ DirectoryIndex index.html
     ExpiresDefault "access plus 1 year"
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
-  # El HTML se revalida siempre, para que una publicación nueva se vea al toque.
+  # El HTML nunca se guarda: si un navegador conserva una versión vieja, va a
+  # pedir archivos JavaScript que ya no existen y la página no carga.
   <FilesMatch "\.html$">
     ExpiresDefault "access plus 0 seconds"
-    Header set Cache-Control "public, max-age=0, must-revalidate"
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
   </FilesMatch>
   ExpiresByType image/svg+xml "access plus 1 month"
 </IfModule>

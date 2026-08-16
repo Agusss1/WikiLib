@@ -11,9 +11,18 @@ export function Footer() {
               Aprender. Pensar. Debatir. Participar.
             </p>
             <p className="mt-3 max-w-[34ch] text-[12.5px] leading-relaxed text-fg-subtle">
-              Base de conocimiento liberal argentina. Nombre provisional: Wiki Liberal
-              Argentina.
+              Un proyecto de <Link href="/nosotros" className="text-accent hover:underline">La Mises</Link>,
+              para acercar conocimiento accesible y gratuito a cada rincón de la
+              provincia de Buenos Aires.
             </p>
+            <a
+              href="https://www.instagram.com/la.mises/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block text-[12.5px] font-medium text-accent hover:underline"
+            >
+              @la.mises en Instagram ↗
+            </a>
           </div>
           {[
             {
@@ -37,6 +46,7 @@ export function Footer() {
             {
               title: "El proyecto",
               links: [
+                ["/nosotros", "Nosotros"],
                 ["/estandares", "Estándares editoriales"],
                 ["/fuentes", "Fuentes"],
                 ["/contribuir", "Contribuir"],
