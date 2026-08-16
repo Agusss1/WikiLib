@@ -6,17 +6,6 @@ import { useAuth } from "@/lib/auth";
 import { Badge, Note } from "@/components/ui";
 import { GoogleBoton } from "@/components/GoogleBoton";
 
-/** Aviso reutilizable cuando la comunidad todavía no tiene backend conectado. */
-export function SinConfigurar() {
-  return (
-    <Note tone="warn" title="La comunidad todavía no está conectada">
-      Falta instalar la API en el servidor y crear la base de datos. El resto de la
-      Wiki —artículos, buscador, rutas, tests— funciona igual. Las instrucciones
-      están en <code className="rounded bg-bg-inset px-1.5 py-0.5 font-mono text-[12px]">api/README.md</code> del repositorio.
-    </Note>
-  );
-}
-
 function Campo({
   label,
   hint,
@@ -150,8 +139,7 @@ export function FormularioCuenta() {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
-  if (!configurado) return <SinConfigurar />;
-  if (!listo) return <p className="text-[14px] text-fg-muted">Cargando…</p>;
+  if (!listo || !configurado) return null;
 
   if (usuario) {
     return (

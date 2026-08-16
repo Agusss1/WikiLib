@@ -15,7 +15,6 @@ function texto(e: unknown): string {
   return e instanceof ApiError ? e.message : "Algo falló. Probá de nuevo.";
 }
 import { Badge, EmptyState, Note } from "@/components/ui";
-import { SinConfigurar } from "@/components/Auth";
 
 const boton =
   "rounded-[var(--radius-sm)] bg-accent px-4 py-2 text-[14px] font-semibold text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50";
@@ -81,7 +80,7 @@ export function ListaHilos() {
     void cargar();
   }, [cargar]);
 
-  if (!configurado) return <SinConfigurar />;
+  if (!configurado) return null;
 
   return (
     <div>
@@ -297,7 +296,7 @@ export function DetalleHilo() {
     void cargar();
   }, [cargar]);
 
-  if (!configurado) return <SinConfigurar />;
+  if (!configurado) return null;
   if (!id)
     return (
       <EmptyState

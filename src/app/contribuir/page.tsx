@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CONTRIBUTION_STATES, CONTRIBUTION_TYPES } from "@/content/editorial";
 import { Badge, Note, PageHeader, Section } from "@/components/ui";
+import { SiHayComunidad } from "@/components/Disponible";
 
 export const metadata: Metadata = {
   title: "Contribuir",
@@ -98,24 +99,25 @@ export default function Contribuir() {
         </ul>
       </Section>
 
-      <Section title="Cómo enviar una propuesta hoy">
-        <Note tone="info" title="El formulario todavía no existe">
-          El sistema de contribuciones con cuentas, borradores y revisión está diseñado y
-          documentado, y es la siguiente etapa del proyecto. Mientras tanto, el contenido
-          vive versionado en el repositorio: una corrección se puede proponer directamente
-          ahí, con el mismo historial de cambios que tendría el sistema definitivo. La
-          estructura de cada artículo está tipada, así que el propio validador te va a
-          avisar si falta una fuente o una objeción.
-        </Note>
-        <div className="mt-4">
+      <SiHayComunidad>
+        <Section
+          title="Cómo enviar una propuesta"
+          subtitle="Por ahora, la vía más directa es el foro: queda a la vista de todos y se puede discutir antes de que entre a la Wiki."
+        >
           <Link
-            href="/estandares"
-            className="inline-block rounded-[var(--radius-sm)] border border-border px-4 py-2 text-[14px] font-semibold text-fg-muted transition-colors hover:border-accent-border hover:text-accent"
+            href="/comunidad"
+            className="inline-block rounded-[var(--radius-sm)] bg-accent px-4 py-2 text-[14px] font-semibold text-accent-fg hover:opacity-90"
           >
-            Leer los estándares editoriales primero →
+            Abrir un hilo en «Sobre la Wiki» →
           </Link>
-        </div>
-      </Section>
+          <p className="mt-4 max-w-[68ch] text-[14px] leading-relaxed text-fg-muted">
+            Contá qué encontraste o qué proponés, con la fuente si corresponde. Si el
+            aporte cumple los estándares, se incorpora al artículo con la corrección
+            registrada y la fecha de revisión actualizada.
+          </p>
+        </Section>
+      </SiHayComunidad>
+
     </div>
   );
 }

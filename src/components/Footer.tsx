@@ -40,7 +40,6 @@ export function Footer() {
                 ["/estandares", "Estándares editoriales"],
                 ["/fuentes", "Fuentes"],
                 ["/contribuir", "Contribuir"],
-                ["/admin", "Panel editorial"],
               ],
             },
           ].map((col) => (

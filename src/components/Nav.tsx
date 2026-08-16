@@ -5,11 +5,17 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SearchDialog } from "./SearchBox";
 import { MenuCuenta } from "./Auth";
+import { useComunidadDisponible } from "./Disponible";
 
-export const NAV_SECTIONS: {
-  title: string;
-  items: { href: string; label: string; note?: string }[];
-}[] = [
+type NavItem = {
+  href: string;
+  label: string;
+  note?: string;
+  /** Sólo se muestra si la comunidad está operativa. */
+  comunidad?: boolean;
+};
+
+export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Empezar",
     items: [
@@ -17,6 +23,7 @@ export const NAV_SECTIONS: {
       { href: "/empeza-aca", label: "Empezá acá", note: "Si no sabés nada del tema" },
       { href: "/rutas", label: "Rutas de aprendizaje" },
       { href: "/tests", label: "Tests" },
+      { href: "/perfil", label: "Mi progreso" },
     ],
   },
   {
@@ -52,12 +59,11 @@ export const NAV_SECTIONS: {
     ],
   },
   {
-    title: "Comunidad",
+    title: "El proyecto",
     items: [
-      { href: "/comunidad", label: "Comunidad" },
-      { href: "/entrar", label: "Mi cuenta" },
+      { href: "/comunidad", label: "Comunidad", comunidad: true },
+      { href: "/entrar", label: "Mi cuenta", comunidad: true },
       { href: "/contribuir", label: "Contribuir" },
-      { href: "/perfil", label: "Mi progreso" },
       { href: "/estandares", label: "Estándares editoriales" },
     ],
   },
@@ -175,9 +181,18 @@ export function Header() {
 }
 
 function SidebarLinks({ pathname }: { pathname: string }) {
+  const hayComunidad = useComunidadDisponible();
+
+  // Lo que no está disponible no se lista. Si una sección se queda sin
+  // entradas, tampoco se dibuja su encabezado.
+  const secciones = NAV_SECTIONS.map((s) => ({
+    ...s,
+    items: s.items.filter((i) => !i.comunidad || hayComunidad),
+  })).filter((s) => s.items.length > 0);
+
   return (
     <>
-      {NAV_SECTIONS.map((section) => (
+      {secciones.map((section) => (
         <div key={section.title} className="mb-6 last:mb-0">
           <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-[0.13em] text-fg-subtle">
             {section.title}

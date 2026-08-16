@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { FormularioCuenta } from "@/components/Auth";
 import { PageHeader } from "@/components/ui";
+import { PaginaDeComunidad } from "@/components/Disponible";
 
 export const metadata: Metadata = {
   title: "Entrar",
@@ -9,13 +10,15 @@ export const metadata: Metadata = {
 
 export default function Entrar() {
   return (
-    <div className="mx-auto max-w-md py-4">
-      <PageHeader
-        eyebrow="Cuenta"
-        title="Entrar a WikiLib"
-        lead="Leer no requiere cuenta. La necesitás para participar de los debates."
-      />
-      <FormularioCuenta />
-    </div>
+    <PaginaDeComunidad>
+      <div className="mx-auto max-w-md py-4">
+        <PageHeader
+          eyebrow="Cuenta"
+          title="Entrar a WikiLib"
+          lead="Leer no requiere cuenta. La necesitás para participar de los debates."
+        />
+        <FormularioCuenta />
+      </div>
+    </PaginaDeComunidad>
   );
 }

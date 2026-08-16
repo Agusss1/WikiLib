@@ -5,6 +5,7 @@ import { PATHS } from "@/content/learning";
 import { FAQS } from "@/content/debates";
 import { HeroSearch } from "@/components/SearchBox";
 import { Badge, Card, Grid, LevelBadge, Section } from "@/components/ui";
+import { SiHayComunidad } from "@/components/Disponible";
 
 const START_HERE = [
   "que-es-el-liberalismo",
@@ -230,23 +231,26 @@ export default function Home() {
               Cuatro de esos principios están validados automáticamente en cada build.
             </p>
           </Link>
-          <Link
-            href="/comunidad"
-            className="group rounded-[var(--radius)] border border-border bg-bg-elevated p-6 transition-colors hover:border-accent-border"
-          >
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-accent">
-              Comunidad
-            </p>
-            <h3 className="mt-2 text-[1.1rem] font-semibold group-hover:text-accent">
-              La Wiki es la puerta de entrada
-            </h3>
-            <p className="mt-2 text-[14px] leading-relaxed text-fg-muted">
-              Debates, grupos de lectura, encuentros y contribuciones. El contenido de la
-              comunidad está separado del de la Wiki y siempre señalizado como tal.
-            </p>
-          </Link>
+          <SiHayComunidad>
+            <Link
+              href="/comunidad"
+              className="group rounded-[var(--radius)] border border-border bg-bg-elevated p-6 transition-colors hover:border-accent-border"
+            >
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-accent">
+                Comunidad
+              </p>
+              <h3 className="mt-2 text-[1.1rem] font-semibold group-hover:text-accent">
+                La Wiki es la puerta de entrada
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-fg-muted">
+                Debates con gente que estudió los mismos temas. El contenido de la
+                comunidad está separado del de la Wiki y siempre señalizado como tal.
+              </p>
+            </Link>
+          </SiHayComunidad>
         </div>
       </Section>
+
     </div>
   );
 }
