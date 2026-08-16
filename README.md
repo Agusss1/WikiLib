@@ -113,16 +113,19 @@ tocar un artículo.
 
 ## Comunidad y cuentas
 
-El sitio es estático, así que las cuentas viven en **Supabase**: registro con email y
-contraseña o con Google, y verificación por código de 6 dígitos.
+El sitio es HTML estático, pero la comunidad necesita cuentas. La API es **PHP + MySQL
+corriendo en el mismo hosting**: sin servicios de terceros, sin costos adicionales y con
+los datos en el servidor propio.
 
-Se puede **crear cuenta y usar todo el sitio sin verificar nada**. La verificación se
-pide sólo al **publicar** en la comunidad, y esa regla está aplicada por una política de
-Postgres, no por la interfaz: ocultar el botón no protegería nada, porque cualquiera
-puede llamar a la API directamente.
+- Registro con **email, contraseña y apodo**, o con **Google**
+- Se puede **crear cuenta y usar todo el sitio sin verificar nada**
+- Para **publicar** hace falta confirmar el email con un **código de 6 dígitos**
 
-Sin configurar, la Wiki funciona igual y sólo la sección Comunidad muestra un aviso.
-Puesta en marcha en **[`supabase/README.md`](./supabase/README.md)**.
+Esa última regla se aplica **en el servidor**, no en la interfaz: si sólo escondiera el
+botón, alcanzaría con abrir la consola del navegador para saltearla.
+
+Sin la API instalada, la Wiki funciona igual y sólo la sección Comunidad muestra un
+aviso. Puesta en marcha en **[`api/README.md`](./api/README.md)**.
 
 ## Documentación
 

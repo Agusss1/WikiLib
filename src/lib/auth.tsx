@@ -1,31 +1,25 @@
 "use client";
 
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
+  createContext, useCallback, useContext, useEffect, useMemo, useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { getSupabase, isSupabaseConfigured, mensajeDeError } from "./supabase";
-
-export type Perfil = { id: string; apodo: string; bio: string | null };
+import { ApiError, api, type UsuarioApi } from "./api";
 
 type Resultado = { ok: boolean; error?: string; mensaje?: string };
 
 type AuthState = {
   listo: boolean;
+  /** false si la API todavía no está instalada en el servidor. */
   configurado: boolean;
-  user: User | null;
-  perfil: Perfil | null;
-  /** Verificado = confirmó su email. Es lo que habilita a publicar. */
+  usuario: UsuarioApi | null;
+  /** Verificado = confirmó el email. Es lo que habilita a publicar. */
   verificado: boolean;
-  registrarse: (email: string, password: string, apodo: string) => Promise<Resultado>;
-  entrar: (email: string, password: string) => Promise<Resultado>;
-  entrarConGoogle: () => Promise<Resultado>;
+  /** ID de cliente de Google, o "" si el ingreso con Google no está configurado. */
+  googleClientId: string;
+  registrarse: (email: string, clave: string, apodo: string) => Promise<Resultado>;
+  entrar: (email: string, clave: string) => Promise<Resultado>;
+  entrarConGoogle: (credential: string) => Promise<Resultado>;
   salir: () => Promise<void>;
   enviarCodigo: () => Promise<Resultado>;
   confirmarCodigo: (codigo: string) => Promise<Resultado>;
@@ -35,213 +29,132 @@ type AuthState = {
 
 const Ctx = createContext<AuthState | null>(null);
 
+type RespSesion = { usuario: UsuarioApi | null; google_client_id: string };
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [listo, setListo] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
-  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [configurado, setConfigurado] = useState(true);
+  const [usuario, setUsuario] = useState<UsuarioApi | null>(null);
+  const [googleClientId, setGoogle] = useState("");
 
-  const sb = getSupabase();
-  const user = session?.user ?? null;
-
-  const cargarPerfil = useCallback(
-    async (uid: string) => {
-      if (!sb) return;
-      const { data } = await sb
-        .from("profiles")
-        .select("id, apodo, bio")
-        .eq("id", uid)
-        .maybeSingle();
-      setPerfil((data as Perfil) ?? null);
-    },
-    [sb],
-  );
+  const refrescar = useCallback(async () => {
+    try {
+      const r = await api.get<RespSesion>("sesion.php");
+      setUsuario(r.usuario);
+      setGoogle(r.google_client_id ?? "");
+      setConfigurado(true);
+    } catch (e) {
+      // 503 = falta config.php. Cualquier otro fallo también deja la comunidad
+      // fuera de servicio, pero el resto del sitio sigue andando igual.
+      setConfigurado(!(e instanceof ApiError && (e.status === 503 || e.status === 0 || e.status === 404)));
+      setUsuario(null);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!sb) {
-      setListo(true);
-      return;
-    }
     let vivo = true;
-
-    // Si el backend no responde, la interfaz igual tiene que quedar usable:
-    // se muestra el formulario de ingreso en lugar de un "Cargando…" eterno.
-    const salvavidas = setTimeout(() => {
+    void refrescar().finally(() => {
       if (vivo) setListo(true);
-    }, 8000);
-
-    sb.auth
-      .getSession()
-      .then(({ data }) => {
-        if (!vivo) return;
-        setSession(data.session);
-        if (data.session?.user) void cargarPerfil(data.session.user.id);
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!vivo) return;
-        clearTimeout(salvavidas);
-        setListo(true);
-      });
-
-    const { data: sub } = sb.auth.onAuthStateChange((_evt, s) => {
-      if (!vivo) return;
-      setSession(s);
-      if (s?.user) void cargarPerfil(s.user.id);
-      else setPerfil(null);
     });
-
     return () => {
       vivo = false;
-      clearTimeout(salvavidas);
-      sub.subscription.unsubscribe();
     };
-  }, [sb, cargarPerfil]);
+  }, [refrescar]);
 
-  /**
-   * El perfil lo crea un trigger de la base al registrarse. Puede tardar un
-   * instante, así que si todavía no está se reintenta unas pocas veces en
-   * lugar de dejar al usuario sin apodo.
-   */
-  const refrescar = useCallback(async () => {
-    if (!sb) return;
-    const { data } = await sb.auth.getSession();
-    setSession(data.session);
-    if (!data.session?.user) return;
-    for (let i = 0; i < 4; i++) {
-      await cargarPerfil(data.session.user.id);
-      const { data: p } = await sb
-        .from("profiles")
-        .select("id")
-        .eq("id", data.session.user.id)
-        .maybeSingle();
-      if (p) break;
-      await new Promise((r) => setTimeout(r, 400));
-    }
-  }, [sb, cargarPerfil]);
+  function envolver(fn: () => Promise<Resultado>): Promise<Resultado> {
+    return fn().catch((e) => ({
+      ok: false,
+      error: e instanceof ApiError ? e.message : "Algo falló. Probá de nuevo.",
+    }));
+  }
 
   const registrarse = useCallback<AuthState["registrarse"]>(
-    async (email, password, apodo) => {
-      if (!sb) return { ok: false, error: "La comunidad todavía no está configurada." };
-      const limpio = apodo.trim();
-      if (limpio.length < 3 || limpio.length > 24)
-        return { ok: false, error: "El apodo debe tener entre 3 y 24 caracteres." };
-
-      const { error } = await sb.auth.signUp({
-        email: email.trim(),
-        password,
-        options: { data: { apodo: limpio } },
-      });
-      if (error) return { ok: false, error: mensajeDeError(error.message) };
-      await refrescar();
-      return {
-        ok: true,
-        mensaje:
-          "Cuenta creada. Ya podés leer y navegar todo; para publicar en la comunidad hay que verificar el email.",
-      };
-    },
-    [sb, refrescar],
+    (email, clave, apodo) =>
+      envolver(async () => {
+        const r = await api.post<{ usuario: UsuarioApi; mensaje: string }>(
+          "registro.php",
+          { email, clave, apodo },
+        );
+        setUsuario(r.usuario);
+        return { ok: true, mensaje: r.mensaje };
+      }),
+    [],
   );
 
   const entrar = useCallback<AuthState["entrar"]>(
-    async (email, password) => {
-      if (!sb) return { ok: false, error: "La comunidad todavía no está configurada." };
-      const { error } = await sb.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (error) return { ok: false, error: mensajeDeError(error.message) };
-      await refrescar();
-      return { ok: true };
-    },
-    [sb, refrescar],
+    (email, clave) =>
+      envolver(async () => {
+        const r = await api.post<{ usuario: UsuarioApi }>("ingresar.php", {
+          email,
+          clave,
+        });
+        setUsuario(r.usuario);
+        return { ok: true };
+      }),
+    [],
   );
 
-  const entrarConGoogle = useCallback<AuthState["entrarConGoogle"]>(async () => {
-    if (!sb) return { ok: false, error: "La comunidad todavía no está configurada." };
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/entrar/` },
-    });
-    if (error) return { ok: false, error: mensajeDeError(error.message) };
-    return { ok: true };
-  }, [sb]);
+  const entrarConGoogle = useCallback<AuthState["entrarConGoogle"]>(
+    (credential) =>
+      envolver(async () => {
+        const r = await api.post<{ usuario: UsuarioApi }>("google.php", {
+          credential,
+        });
+        setUsuario(r.usuario);
+        return { ok: true };
+      }),
+    [],
+  );
 
   const salir = useCallback(async () => {
-    if (!sb) return;
-    await sb.auth.signOut();
-    setSession(null);
-    setPerfil(null);
-  }, [sb]);
+    try {
+      await api.post("salir.php");
+    } finally {
+      setUsuario(null);
+    }
+  }, []);
 
-  /** Manda un código de 6 dígitos al email de la cuenta. */
-  const enviarCodigo = useCallback<AuthState["enviarCodigo"]>(async () => {
-    if (!sb || !user?.email)
-      return { ok: false, error: "No hay una cuenta activa." };
-    const { error } = await sb.auth.signInWithOtp({
-      email: user.email,
-      options: { shouldCreateUser: false },
-    });
-    if (error) return { ok: false, error: mensajeDeError(error.message) };
-    return {
-      ok: true,
-      mensaje: `Te mandamos un código de 6 dígitos a ${user.email}. Puede tardar un par de minutos, y a veces cae en spam.`,
-    };
-  }, [sb, user]);
+  const enviarCodigo = useCallback<AuthState["enviarCodigo"]>(
+    () =>
+      envolver(async () => {
+        const r = await api.post<{ mensaje: string }>("codigo-enviar.php");
+        return { ok: true, mensaje: r.mensaje };
+      }),
+    [],
+  );
 
   const confirmarCodigo = useCallback<AuthState["confirmarCodigo"]>(
-    async (codigo) => {
-      if (!sb || !user?.email)
-        return { ok: false, error: "No hay una cuenta activa." };
-      const token = codigo.replace(/\D/g, "");
-      if (token.length !== 6)
-        return { ok: false, error: "El código son 6 dígitos." };
-
-      const { error } = await sb.auth.verifyOtp({
-        email: user.email,
-        token,
-        type: "email",
-      });
-      if (error) return { ok: false, error: mensajeDeError(error.message) };
-      await refrescar();
-      return { ok: true, mensaje: "Cuenta verificada. Ya podés publicar en la comunidad." };
-    },
-    [sb, user, refrescar],
+    (codigo) =>
+      envolver(async () => {
+        const r = await api.post<{ mensaje: string; usuario: UsuarioApi }>(
+          "codigo-verificar.php",
+          { codigo },
+        );
+        setUsuario(r.usuario);
+        return { ok: true, mensaje: r.mensaje };
+      }),
+    [],
   );
 
   const cambiarApodo = useCallback<AuthState["cambiarApodo"]>(
-    async (apodo) => {
-      if (!sb || !user) return { ok: false, error: "No hay una cuenta activa." };
-      const limpio = apodo.trim();
-      if (limpio.length < 3 || limpio.length > 24)
-        return { ok: false, error: "El apodo debe tener entre 3 y 24 caracteres." };
-      const { error } = await sb
-        .from("profiles")
-        .update({ apodo: limpio })
-        .eq("id", user.id);
-      if (error) return { ok: false, error: mensajeDeError(error.message) };
-      await cargarPerfil(user.id);
-      return { ok: true, mensaje: "Apodo actualizado." };
-    },
-    [sb, user, cargarPerfil],
-  );
-
-  /**
-   * Google devuelve cuentas ya confirmadas. Para email con contraseña,
-   * `email_confirmed_at` sólo se completa cuando la persona valida el código.
-   */
-  const verificado = Boolean(
-    user &&
-      ((user as unknown as { email_confirmed_at?: string }).email_confirmed_at ||
-        user.confirmed_at),
+    (apodo) =>
+      envolver(async () => {
+        const r = await api.post<{ mensaje: string; apodo: string }>("perfil.php", {
+          apodo,
+        });
+        setUsuario((u) => (u ? { ...u, apodo: r.apodo } : u));
+        return { ok: true, mensaje: r.mensaje };
+      }),
+    [],
   );
 
   const value = useMemo<AuthState>(
     () => ({
       listo,
-      configurado: isSupabaseConfigured,
-      user,
-      perfil,
-      verificado,
+      configurado,
+      usuario,
+      verificado: Boolean(usuario?.verificado),
+      googleClientId,
       registrarse,
       entrar,
       entrarConGoogle,
@@ -251,8 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cambiarApodo,
       refrescar,
     }),
-    [listo, user, perfil, verificado, registrarse, entrar, entrarConGoogle, salir,
-     enviarCodigo, confirmarCodigo, cambiarApodo, refrescar],
+    [listo, configurado, usuario, googleClientId, registrarse, entrar,
+     entrarConGoogle, salir, enviarCodigo, confirmarCodigo, cambiarApodo, refrescar],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

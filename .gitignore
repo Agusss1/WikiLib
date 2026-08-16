@@ -10,3 +10,6 @@ npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# Credenciales de la base de datos. Nunca al repositorio.
+api/config.php

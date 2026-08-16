@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { mensajeDeError } from "@/lib/supabase";
 import {
   TEMAS, TEMA_LABEL, crearHilo, fecha, listarHilos, listarRespuestas,
   obtenerHilo, responder, type Hilo, type Respuesta,
 } from "@/lib/foro";
+import { ApiError } from "@/lib/api";
+
+/** Los errores de la API ya vienen redactados para leer; el resto se generaliza. */
+function texto(e: unknown): string {
+  return e instanceof ApiError ? e.message : "Algo falló. Probá de nuevo.";
+}
 import { Badge, EmptyState, Note } from "@/components/ui";
 import { SinConfigurar } from "@/components/Auth";
 
@@ -21,9 +26,9 @@ const boton =
  * falta es la forma más rápida de perderlo.
  */
 function Permiso({ accion }: { accion: string }) {
-  const { user, verificado } = useAuth();
+  const { usuario, verificado } = useAuth();
   if (verificado) return null;
-  if (!user) {
+  if (!usuario) {
     return (
       <Note tone="info" title={`Para ${accion} hace falta una cuenta`}>
         Leer es libre y no requiere registrarse.{" "}
@@ -49,7 +54,7 @@ function Permiso({ accion }: { accion: string }) {
 // Listado de hilos
 // ---------------------------------------------------------------------------
 export function ListaHilos() {
-  const { configurado, user, verificado, perfil } = useAuth();
+  const { configurado, verificado } = useAuth();
   const [hilos, setHilos] = useState<Hilo[]>([]);
   const [tema, setTema] = useState("todos");
   const [cargando, setCargando] = useState(true);
@@ -66,7 +71,7 @@ export function ListaHilos() {
     try {
       setHilos(await listarHilos(tema));
     } catch (e) {
-      setError(mensajeDeError((e as Error).message));
+      setError(texto(e));
     } finally {
       setCargando(false);
     }
@@ -109,9 +114,8 @@ export function ListaHilos() {
         </div>
       )}
 
-      {creando && perfil && user && (
+      {creando && (
         <FormularioHilo
-          authorId={user.id}
           onListo={() => {
             setCreando(false);
             void cargar();
@@ -148,19 +152,19 @@ export function ListaHilos() {
                 className="group block px-5 py-4 transition-colors hover:bg-bg-subtle"
               >
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <Badge tone="accent">{TEMA_LABEL[h.topic] ?? h.topic}</Badge>
+                  <Badge tone="accent">{TEMA_LABEL[h.tema] ?? h.tema}</Badge>
                   <span className="text-[12px] text-fg-subtle">
-                    {h.author_apodo} · {fecha(h.created_at)}
+                    {h.autor} · {fecha(h.creado_en)}
                   </span>
                 </div>
                 <p className="text-[15.5px] font-semibold leading-snug group-hover:text-accent">
-                  {h.title}
+                  {h.titulo}
                 </p>
                 <p className="mt-1 line-clamp-2 text-[13.5px] leading-relaxed text-fg-muted">
-                  {h.body}
+                  {h.cuerpo}
                 </p>
                 <p className="mt-2 text-[12.5px] text-fg-subtle">
-                  {h.reply_count} {h.reply_count === 1 ? "respuesta" : "respuestas"}
+                  {h.respuestas} {h.respuestas === 1 ? "respuesta" : "respuestas"}
                 </p>
               </Link>
             </li>
@@ -171,13 +175,7 @@ export function ListaHilos() {
   );
 }
 
-function FormularioHilo({
-  authorId,
-  onListo,
-}: {
-  authorId: string;
-  onListo: () => void;
-}) {
+function FormularioHilo({ onListo }: { onListo: () => void }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [topic, setTopic] = useState("general");
@@ -189,10 +187,10 @@ function FormularioHilo({
     setEnviando(true);
     setError(null);
     try {
-      await crearHilo({ authorId, title, body, topic });
+      await crearHilo({ titulo: title, cuerpo: body, tema: topic });
       onListo();
     } catch (err) {
-      setError(mensajeDeError((err as Error).message));
+      setError(texto(err));
     } finally {
       setEnviando(false);
     }
@@ -269,13 +267,13 @@ export function DetalleHilo() {
   const params = useSearchParams();
   const router = useRouter();
   const id = params.get("id");
-  const { configurado, user, verificado } = useAuth();
+  const { configurado, verificado } = useAuth();
 
   const [hilo, setHilo] = useState<Hilo | null>(null);
   const [respuestas, setRespuestas] = useState<Respuesta[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [texto, setTexto] = useState("");
+  const [mensaje, setMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -289,7 +287,7 @@ export function DetalleHilo() {
       setHilo(h);
       setRespuestas(r);
     } catch (e) {
-      setError(mensajeDeError((e as Error).message));
+      setError(texto(e));
     } finally {
       setCargando(false);
     }
@@ -334,15 +332,15 @@ export function DetalleHilo() {
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !id) return;
+    if (!id) return;
     setEnviando(true);
     setError(null);
     try {
-      await responder({ authorId: user.id, threadId: id, body: texto });
-      setTexto("");
+      await responder({ hilo: id, cuerpo: mensaje });
+      setMensaje("");
       await cargar();
     } catch (err) {
-      setError(mensajeDeError((err as Error).message));
+      setError(texto(err));
     } finally {
       setEnviando(false);
     }
@@ -359,17 +357,17 @@ export function DetalleHilo() {
 
       <article className="mb-8 rounded-[var(--radius)] border border-border bg-bg-elevated p-6">
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <Badge tone="accent">{TEMA_LABEL[hilo.topic] ?? hilo.topic}</Badge>
+          <Badge tone="accent">{TEMA_LABEL[hilo.tema] ?? hilo.tema}</Badge>
           <Badge>Contenido de la comunidad</Badge>
         </div>
         <h1 className="text-[1.5rem] font-bold leading-snug tracking-[-0.02em]">
-          {hilo.title}
+          {hilo.titulo}
         </h1>
         <p className="mt-1.5 text-[12.5px] text-fg-subtle">
-          {hilo.author_apodo} · {fecha(hilo.created_at)}
+          {hilo.autor} · {fecha(hilo.creado_en)}
         </p>
         <div className="prose mt-4">
-          {hilo.body.split("\n").filter(Boolean).map((p, i) => (
+          {hilo.cuerpo.split("\n").filter(Boolean).map((p, i) => (
             <p key={i}>{p}</p>
           ))}
         </div>
@@ -387,11 +385,11 @@ export function DetalleHilo() {
               className="rounded-[var(--radius)] border border-border bg-bg-elevated p-4"
             >
               <p className="text-[12.5px] font-semibold text-fg-muted">
-                {r.author_apodo}{" "}
-                <span className="font-normal text-fg-subtle">· {fecha(r.created_at)}</span>
+                {r.autor}{" "}
+                <span className="font-normal text-fg-subtle">· {fecha(r.creado_en)}</span>
               </p>
               <div className="prose mt-2">
-                {r.body.split("\n").filter(Boolean).map((p, i) => (
+                {r.cuerpo.split("\n").filter(Boolean).map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}
               </div>
@@ -407,8 +405,8 @@ export function DetalleHilo() {
         >
           <label className="block text-[13px] font-semibold">Tu respuesta</label>
           <textarea
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
+            value={mensaje}
+            onChange={(e) => setMensaje(e.target.value)}
             required
             minLength={2}
             maxLength={8000}

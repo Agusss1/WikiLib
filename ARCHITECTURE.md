@@ -116,40 +116,46 @@ type Article = {
 | Progreso | `localStorage` | Perfil y progreso funcionando desde el día uno, sin backend. |
 | Validación | Script propio en CI | Convierte los principios editoriales en un chequeo que bloquea el build. |
 
-### Cuentas y comunidad: Supabase
+### Cuentas y comunidad: PHP + MySQL en el hosting propio
 
-El sitio se publica como HTML estático en un hosting común, así que **no hay servidor
-propio** donde correr autenticación ni base de datos. Las opciones eran mudar todo a un
-host con Node —perdiendo el despliegue actual— o poner el backend afuera.
+El sitio se publica como HTML estático, así que **no hay proceso Node corriendo** donde
+alojar autenticación. Se evaluó un servicio externo tipo Supabase y se descartó por una
+razón explícita del proyecto: no depender de un tercero ni sumar un costo que pueda
+aparecer al crecer.
 
-Se eligió **Supabase**: el sitio sigue siendo estático y le habla directamente desde el
-navegador. Aporta cuentas con email y contraseña, Google OAuth, verificación por código,
-Postgres y políticas de acceso por fila.
+La solución usa lo que el hosting ya provee: **una API en PHP con MySQL, en el mismo
+dominio que el sitio**. Eso tiene una ventaja que no es obvia: al ser mismo origen, la
+sesión puede viajar en una cookie `httpOnly` en lugar de un token guardado en
+`localStorage`. Un script inyectado en la página no puede leerla.
 
 | Necesidad | Cómo se resuelve |
 |---|---|
-| Registro sin verificar | «Confirm email» desactivado: hay sesión desde el alta |
-| Verificar para publicar | Política RLS que exige `email_confirmed_at` |
-| Código de 6 dígitos | `signInWithOtp` + plantilla con `{{ .Token }}` |
-| Apodo único | Trigger que crea el perfil y desambigua colisiones |
-| Google | OAuth; esas cuentas llegan ya verificadas |
+| Registro sin verificar | La sesión se crea en el alta; `verificado` queda en 0 |
+| Verificar para publicar | `exigirVerificado()` en los endpoints de escritura |
+| Código de 6 dígitos | Se genera, se envía por `mail()` y se guarda **hasheado** |
+| Apodo único | Restricción `UNIQUE` y validación previa con mensaje claro |
+| Google | Identity Services; el `id_token` se valida contra Google en el servidor |
 
-**La regla de «sólo verificados publican» vive en la base de datos, no en la interfaz.**
-Ocultar un botón no protege nada: cualquiera puede llamar a la API directamente. Por eso
-está en una política de Postgres, que rechaza el `insert` aunque se lo invoque desde
-afuera del sitio.
+**La regla de «sólo verificados publican» vive en el servidor.** Ocultar un botón no
+protege nada: cualquiera puede llamar a la API directamente. El rechazo ocurre en PHP,
+antes de tocar la base.
 
-El sitio **funciona entero sin Supabase configurado**: artículos, buscador, rutas, tests
-y progreso andan igual, y sólo la sección Comunidad muestra un aviso. Eso permitió
-desplegar antes de tener backend, y evita que una caída del servicio rompa la Wiki.
-Instrucciones completas en [`supabase/README.md`](./supabase/README.md).
+Defensas incluidas: consultas preparadas reales, `password_hash` con bcrypt, códigos
+hasheados, límite de intentos por IP y por cuenta, cookie `SameSite=Strict`, lista de
+orígenes permitidos, y el mismo mensaje para email inexistente y contraseña equivocada
+—para no confirmarle a nadie qué direcciones están registradas.
+
+El sitio **funciona entero sin la API instalada**: artículos, buscador, rutas, tests y
+progreso andan igual, y sólo la sección Comunidad muestra un aviso. Instrucciones en
+[`api/README.md`](./api/README.md).
 
 ### Lo que se decidió NO usar todavía
 
 - **CMS**: agregaría una dependencia y perdería la validación por tipos.
 - **Motor de búsqueda externo**: con este volumen de contenido, el cliente alcanza.
-- **Servidor propio**: mientras el contenido sea estático y el backend viva en Supabase,
-  no hace falta.
+- **Servidor Node en producción**: el sitio es estático y la API es PHP, que el hosting
+  ya ejecuta. Un proceso Node sólo agregaría algo que mantener.
+- **Servicios de autenticación de terceros**: descartados por dependencia y costo.
 
 La regla fue: no incorporar infraestructura antes de que exista el problema que resuelve.
 
@@ -177,23 +183,23 @@ Debate / Faq / Scenario / ConstitutionArticle / Indicator ─→ relatedArticles
 Todas las flechas se verifican en `npm run content:check`. Un enlace roto no llega
 a producción.
 
-### Comunidad (implementado, en `supabase/schema.sql`)
+### Comunidad (implementado, en `api/schema.sql`)
 
 El contenido de la Wiki sigue en git —tiene ventajas de auditoría que una base de datos
-no da— y Postgres cubre lo que git no puede: cuentas, discusión y moderación.
+no da— y MySQL cubre lo que git no puede: cuentas, discusión y moderación.
 
 ```sql
-profiles   (id -> auth.users, apodo unique, bio, created_at)
-threads    (id, author_id, title, body, topic, created_at, hidden)
-posts      (id, thread_id, author_id, body, created_at, hidden)
-reports    (id, reporter_id, target_type, target_id, reason, status)
-
--- La función que sostiene toda la regla de participación:
-esta_verificado() -> boolean   -- lee auth.users.email_confirmed_at
+usuarios    (id, email unique, clave_hash, apodo unique, verificado, google_id)
+codigos     (id, usuario_id, codigo_hash, intentos, vence_en)
+hilos       (id, usuario_id, titulo, cuerpo, tema, oculto, creado_en)
+respuestas  (id, hilo_id, usuario_id, cuerpo, oculto, creado_en)
+reportes    (id, usuario_id, tipo, objetivo_id, motivo, estado)
+intentos    (id, accion, ip, creado_en)   -- control de fuerza bruta
 ```
 
-Vistas `threads_with_author` y `posts_with_author` resuelven el apodo del autor sin
-exponer nunca el email, que queda en `auth.users`.
+`clave_hash` admite NULL: una cuenta creada sólo con Google nunca fija contraseña.
+Los códigos se guardan hasheados, así que ni leyendo la base se pueden verificar
+cuentas ajenas.
 
 ### Pendiente de la misma base
 
@@ -409,7 +415,7 @@ cuál es cuál.
 | Diccionario | ✅ 141 términos, A–Z |
 | Rutas de aprendizaje | ✅ 6 rutas, 61 módulos |
 | Usuarios y progreso | ✅ cuentas reales + progreso local |
-| Comunidad básica | ✅ cuentas, Google, verificación por código, hilos y respuestas |
+| Comunidad básica | ✅ cuentas propias, Google, verificación por código, hilos y respuestas |
 | Panel de administración | ✅ con métricas de deuda editorial |
 | Fuentes | ✅ 44, con jerarquía de prioridad |
 | Tests | ✅ 13 quizzes con explicación por respuesta |

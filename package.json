@@ -13,7 +13,6 @@
     "preview": "npm run build && npx --yes serve@14 out -l 3000"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
     "minisearch": "^7.1.2",
     "next": "^15.5.4",
     "react": "^19.1.1",

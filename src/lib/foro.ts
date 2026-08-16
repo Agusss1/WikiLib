@@ -1,49 +1,22 @@
-import { getSupabase } from "./supabase";
-
-/**
- * Corta una consulta que no responde.
- *
- * Sin esto, si el backend está caído o mal configurado, la promesa nunca se
- * resuelve y la pantalla queda en "Cargando…" indefinidamente. Es preferible
- * un error explicable a una espera sin final.
- */
-const LIMITE_MS = 10_000;
-
-async function conTiempoLimite<T>(p: PromiseLike<T>, que: string): Promise<T> {
-  let temporizador: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      Promise.resolve(p),
-      new Promise<never>((_, rechazar) => {
-        temporizador = setTimeout(
-          () => rechazar(new Error(`No se pudo ${que}: el servidor no respondió.`)),
-          LIMITE_MS,
-        );
-      }),
-    ]);
-  } finally {
-    if (temporizador) clearTimeout(temporizador);
-  }
-}
+import { api } from "./api";
 
 export type Hilo = {
-  id: string;
-  title: string;
-  body: string;
-  topic: string;
-  created_at: string;
-  author_id: string;
-  author_apodo: string;
-  reply_count: number;
+  id: number;
+  titulo: string;
+  cuerpo: string;
+  tema: string;
+  creado_en: string;
+  autor: string;
+  autor_id: number;
+  respuestas: number;
 };
 
 export type Respuesta = {
-  id: string;
-  thread_id: string;
-  body: string;
-  created_at: string;
-  author_id: string;
-  author_apodo: string;
+  id: number;
+  cuerpo: string;
+  creado_en: string;
+  autor: string;
+  autor_id: number;
 };
 
 export const TEMAS = [
@@ -59,86 +32,47 @@ export const TEMA_LABEL: Record<string, string> = Object.fromEntries(
   TEMAS.map((t) => [t.id, t.label]),
 );
 
-export async function listarHilos(tema?: string): Promise<Hilo[]> {
-  const sb = getSupabase();
-  if (!sb) return [];
-  let q = sb
-    .from("threads_with_author")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (tema && tema !== "todos") q = q.eq("topic", tema);
-  const { data, error } = await conTiempoLimite(q, "cargar los debates");
-  if (error) throw error;
-  return (data ?? []) as Hilo[];
+export async function listarHilos(tema = "todos"): Promise<Hilo[]> {
+  const r = await api.get<{ hilos: Hilo[] }>(
+    `hilos.php?tema=${encodeURIComponent(tema)}`,
+  );
+  return r.hilos;
 }
 
-export async function obtenerHilo(id: string): Promise<Hilo | null> {
-  const sb = getSupabase();
-  if (!sb) return null;
-  const { data, error } = await conTiempoLimite(
-    sb.from("threads_with_author").select("*").eq("id", id).maybeSingle(),
-    "cargar el hilo",
-  );
-  if (error) throw error;
-  return (data as Hilo) ?? null;
+export async function obtenerHilo(id: string): Promise<Hilo> {
+  const r = await api.get<{ hilo: Hilo }>(`hilos.php?id=${encodeURIComponent(id)}`);
+  return r.hilo;
 }
 
 export async function listarRespuestas(hiloId: string): Promise<Respuesta[]> {
-  const sb = getSupabase();
-  if (!sb) return [];
-  const { data, error } = await conTiempoLimite(
-    sb.from("posts_with_author").select("*").eq("thread_id", hiloId)
-      .order("created_at", { ascending: true }),
-    "cargar las respuestas",
+  const r = await api.get<{ respuestas: Respuesta[] }>(
+    `respuestas.php?hilo=${encodeURIComponent(hiloId)}`,
   );
-  if (error) throw error;
-  return (data ?? []) as Respuesta[];
+  return r.respuestas;
 }
 
 export async function crearHilo(input: {
-  authorId: string;
-  title: string;
-  body: string;
-  topic: string;
-}) {
-  const sb = getSupabase();
-  if (!sb) throw new Error("La comunidad no está configurada.");
-  const { data, error } = await conTiempoLimite(
-    sb.from("threads").insert({
-      author_id: input.authorId,
-      title: input.title.trim(),
-      body: input.body.trim(),
-      topic: input.topic,
-    }).select("id").single(),
-    "publicar el hilo",
-  );
-  if (error) throw error;
-  return data.id as string;
+  titulo: string;
+  cuerpo: string;
+  tema: string;
+}): Promise<number> {
+  const r = await api.post<{ id: number }>("hilos.php", input);
+  return r.id;
 }
 
 export async function responder(input: {
-  authorId: string;
-  threadId: string;
-  body: string;
-}) {
-  const sb = getSupabase();
-  if (!sb) throw new Error("La comunidad no está configurada.");
-  const { error } = await conTiempoLimite(
-    sb.from("posts").insert({
-      author_id: input.authorId,
-      thread_id: input.threadId,
-      body: input.body.trim(),
-    }),
-    "publicar la respuesta",
-  );
-  if (error) throw error;
+  hilo: string;
+  cuerpo: string;
+}): Promise<void> {
+  await api.post("respuestas.php", { hilo: Number(input.hilo), cuerpo: input.cuerpo });
 }
 
-/** Fecha en formato corto y legible en Argentina. */
+/** Fecha relativa, en el registro que usa la gente acá. */
 export function fecha(iso: string): string {
-  const d = new Date(iso);
+  // MySQL devuelve "2026-08-15 23:41:02"; sin la T, Safari no lo interpreta.
+  const d = new Date(iso.replace(" ", "T") + (iso.includes("Z") ? "" : "Z"));
   const diff = (Date.now() - d.getTime()) / 1000;
+  if (Number.isNaN(diff)) return "";
   if (diff < 60) return "recién";
   if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
   if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;

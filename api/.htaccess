@@ -1,0 +1,8 @@
+# Protege los archivos que no son endpoints.
+# config.php tiene las credenciales de la base y no debe servirse jamás.
+<FilesMatch "^(config\.php|config\.example\.php|_bootstrap\.php|schema\.sql)$">
+  Require all denied
+</FilesMatch>
+
+# Sin listado de directorio.
+Options -Indexes
