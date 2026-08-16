@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import "./globals.css";
 import { Header, Sidebar } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: {
@@ -46,19 +46,17 @@ export default function RootLayout({
         >
           Saltar al contenido
         </a>
-        <Header />
-        <div className="mx-auto flex max-w-[1400px]">
-          <Sidebar />
-          <main id="contenido" className="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-10">
-            {children}
-          </main>
-        </div>
-        <Footer />
+        <AuthProvider>
+          <Header />
+          <div className="mx-auto flex max-w-[1400px]">
+            <Sidebar />
+            <main id="contenido" className="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-10">
+              {children}
+            </main>
+          </div>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );
-}
-
-export function NotFoundLink() {
-  return <Link href="/">Volver al inicio</Link>;
 }

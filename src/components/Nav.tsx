@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SearchDialog } from "./SearchBox";
+import { MenuCuenta } from "./Auth";
 
 export const NAV_SECTIONS: {
   title: string;
@@ -54,6 +55,7 @@ export const NAV_SECTIONS: {
     title: "Comunidad",
     items: [
       { href: "/comunidad", label: "Comunidad" },
+      { href: "/entrar", label: "Mi cuenta" },
       { href: "/contribuir", label: "Contribuir" },
       { href: "/perfil", label: "Mi progreso" },
       { href: "/estandares", label: "Estándares editoriales" },
@@ -139,12 +141,7 @@ export function Header() {
             >
               W
             </span>
-            <span className="text-[15px] font-bold tracking-[-0.02em]">
-              WikiLib
-              <span className="ml-1.5 hidden font-normal text-fg-subtle sm:inline">
-                Wiki Liberal Argentina
-              </span>
-            </span>
+            <span className="text-[15px] font-bold tracking-[-0.02em]">WikiLib</span>
           </Link>
 
           <div className="flex-1" />
@@ -162,6 +159,7 @@ export function Header() {
           </button>
 
           <ThemeToggle />
+          <MenuCuenta />
         </div>
 
         {menuOpen && (

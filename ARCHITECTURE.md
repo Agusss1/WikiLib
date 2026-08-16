@@ -116,16 +116,42 @@ type Article = {
 | Progreso | `localStorage` | Perfil y progreso funcionando desde el día uno, sin backend. |
 | Validación | Script propio en CI | Convierte los principios editoriales en un chequeo que bloquea el build. |
 
+### Cuentas y comunidad: Supabase
+
+El sitio se publica como HTML estático en un hosting común, así que **no hay servidor
+propio** donde correr autenticación ni base de datos. Las opciones eran mudar todo a un
+host con Node —perdiendo el despliegue actual— o poner el backend afuera.
+
+Se eligió **Supabase**: el sitio sigue siendo estático y le habla directamente desde el
+navegador. Aporta cuentas con email y contraseña, Google OAuth, verificación por código,
+Postgres y políticas de acceso por fila.
+
+| Necesidad | Cómo se resuelve |
+|---|---|
+| Registro sin verificar | «Confirm email» desactivado: hay sesión desde el alta |
+| Verificar para publicar | Política RLS que exige `email_confirmed_at` |
+| Código de 6 dígitos | `signInWithOtp` + plantilla con `{{ .Token }}` |
+| Apodo único | Trigger que crea el perfil y desambigua colisiones |
+| Google | OAuth; esas cuentas llegan ya verificadas |
+
+**La regla de «sólo verificados publican» vive en la base de datos, no en la interfaz.**
+Ocultar un botón no protege nada: cualquiera puede llamar a la API directamente. Por eso
+está en una política de Postgres, que rechaza el `insert` aunque se lo invoque desde
+afuera del sitio.
+
+El sitio **funciona entero sin Supabase configurado**: artículos, buscador, rutas, tests
+y progreso andan igual, y sólo la sección Comunidad muestra un aviso. Eso permitió
+desplegar antes de tener backend, y evita que una caída del servicio rompa la Wiki.
+Instrucciones completas en [`supabase/README.md`](./supabase/README.md).
+
 ### Lo que se decidió NO usar todavía
 
-- **Base de datos**: el contenido de la Wiki no la necesita y el progreso tampoco. La
-  necesita la comunidad, que es etapa 3.
 - **CMS**: agregaría una dependencia y perdería la validación por tipos.
-- **Autenticación**: no hace falta para leer, estudiar ni medir progreso.
 - **Motor de búsqueda externo**: con este volumen de contenido, el cliente alcanza.
+- **Servidor propio**: mientras el contenido sea estático y el backend viva en Supabase,
+  no hace falta.
 
-Cada una tiene su punto de entrada definido más abajo. La regla fue: no incorporar
-infraestructura antes de que exista el problema que resuelve.
+La regla fue: no incorporar infraestructura antes de que exista el problema que resuelve.
 
 ---
 
@@ -151,29 +177,39 @@ Debate / Faq / Scenario / ConstitutionArticle / Indicator ─→ relatedArticles
 Todas las flechas se verifican en `npm run content:check`. Un enlace roto no llega
 a producción.
 
-### Mañana (cuando entre la comunidad)
+### Comunidad (implementado, en `supabase/schema.sql`)
 
-Postgres. El contenido de la Wiki puede quedar en git incluso entonces —tiene
-ventajas de auditoría que una base de datos no da— y la base cubre lo que git no
-puede: usuarios, discusión y moderación.
+El contenido de la Wiki sigue en git —tiene ventajas de auditoría que una base de datos
+no da— y Postgres cubre lo que git no puede: cuentas, discusión y moderación.
 
 ```sql
-users            (id, email, display_name, role, created_at)
+profiles   (id -> auth.users, apodo unique, bio, created_at)
+threads    (id, author_id, title, body, topic, created_at, hidden)
+posts      (id, thread_id, author_id, body, created_at, hidden)
+reports    (id, reporter_id, target_type, target_id, reason, status)
+
+-- La función que sostiene toda la regla de participación:
+esta_verificado() -> boolean   -- lee auth.users.email_confirmed_at
+```
+
+Vistas `threads_with_author` y `posts_with_author` resuelven el apodo del autor sin
+exponer nunca el email, que queda en `auth.users`.
+
+### Pendiente de la misma base
+
+```sql
 progress         (user_id, article_slug, read_at, saved_at)
 path_progress    (user_id, path_id, module_key, completed_at)
 quiz_attempts    (user_id, quiz_id, score, total, created_at)
 
 contributions    (id, author_id, type, target_slug, payload JSONB,
                   status, reviewer_id, review_note, created_at)
-                 -- status: borrador | pendiente-de-revision |
-                 --         necesita-fuentes | aprobado | rechazado
 revisions        (id, article_slug, payload JSONB, author_id, created_at)
-
-threads          (id, author_id, title, body, topic, created_at)
-posts            (id, thread_id, author_id, body, created_at)
-reports          (id, target_type, target_id, reporter_id, reason, status)
 events           (id, title, city, starts_at, description)
 ```
+
+El progreso hoy vive en `localStorage`; migrarlo a estas tablas es sincronizarlo entre
+dispositivos, no rehacerlo: la forma de los datos ya coincide.
 
 `contributions.payload` guarda un `Article` parcial con la misma forma que hoy tienen
 los archivos. Por eso el editor web va a poder correr **el mismo validador** que corre
@@ -372,8 +408,8 @@ cuál es cuál.
 | Argentina | ✅ historia, crisis, Constitución, Alberdi |
 | Diccionario | ✅ 141 términos, A–Z |
 | Rutas de aprendizaje | ✅ 6 rutas, 61 módulos |
-| Usuarios y progreso | ✅ local, sin backend |
-| Comunidad básica | ⚠️ diseñada y documentada; requiere cuentas |
+| Usuarios y progreso | ✅ cuentas reales + progreso local |
+| Comunidad básica | ✅ cuentas, Google, verificación por código, hilos y respuestas |
 | Panel de administración | ✅ con métricas de deuda editorial |
 | Fuentes | ✅ 44, con jerarquía de prioridad |
 | Tests | ✅ 13 quizzes con explicación por respuesta |

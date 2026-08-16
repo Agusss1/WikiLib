@@ -111,6 +111,19 @@ tocar un artículo.
 
 ---
 
+## Comunidad y cuentas
+
+El sitio es estático, así que las cuentas viven en **Supabase**: registro con email y
+contraseña o con Google, y verificación por código de 6 dígitos.
+
+Se puede **crear cuenta y usar todo el sitio sin verificar nada**. La verificación se
+pide sólo al **publicar** en la comunidad, y esa regla está aplicada por una política de
+Postgres, no por la interfaz: ocultar el botón no protegería nada, porque cualquiera
+puede llamar a la API directamente.
+
+Sin configurar, la Wiki funciona igual y sólo la sección Comunidad muestra un aviso.
+Puesta en marcha en **[`supabase/README.md`](./supabase/README.md)**.
+
 ## Documentación
 
 **[ARCHITECTURE.md](./ARCHITECTURE.md)** — arquitectura completa, modelo de datos,
